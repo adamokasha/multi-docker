@@ -1,0 +1,24 @@
+language: generic
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t adamokasha/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true USERNAME/react-test npm test
+
+after_success:
+  - docker build -t adamokasha/multi-client ./client
+  - docker build -t adamokasha/multi-nginx ./nginx
+  - docker build -t adamokasha/multi-server ./server
+  - docker build -t adamokasha/multi-worker ./worker
+  # Log in to the docker cli
+  # part before pipe passes password to part after pipe
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Take those images and push them to docker hub
+  - docker push adamokasha/multi-client
+  - docker push adamokasha/multi-nginx
+  - docker push adamokasha/multi-server
+  - docker push adamokasha/multi-worker
